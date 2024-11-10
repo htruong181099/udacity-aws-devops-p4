@@ -40,10 +40,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "18"
           cache: "npm"
@@ -78,9 +78,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Check AWS IAM User (STS Get Caller Identity)
-        run: aws sts get-caller-identity
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -95,12 +92,8 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.K8S_CLUSTER }}
 
-      - name: Set image
+      - name: Set image & Deploy to Amazon EKS
         working-directory: starter/frontend/k8s
         run: |
           kustomize edit set image frontend=${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ env.IMAGE_TAG }}
-          
-      - name: Deploy to Amazon EKS
-        working-directory: starter/frontend/k8s
-        run: |
-           kustomize build | kubectl apply -f -
+          kustomize build | kubectl apply -f -
