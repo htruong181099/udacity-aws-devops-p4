@@ -1,0 +1,99 @@
+name: Backend Continuous Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ECR_REGISTRY: 555101760227.dkr.ecr.us-east-1.amazonaws.com/backend
+  ECR_REPOSITORY: backend
+  K8S_CLUSTER: cluster
+  REPO_NAME: frontend
+  IMAGE_TAG: ${{ github.sha }}
+  AWS_REGION: us-east-1
+  REACT_APP_MOVIE_API_URL: http://localhost:5000
+
+jobs:
+  Lint:
+    name: Linting Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: ./starter/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pip install flake8
+
+      - name: Run linting job
+        run: cd starter/backend && pipenv run lint
+
+  Test:
+    name: Test Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: ./starter/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pip install flake8
+
+      - name: Run test
+        run: cd starter/backend && pipenv install pytest && pipenv run test
+
+  Build:
+    needs: [Test, Lint]
+    name: Build Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push docker image to ECR
+        working-directory: ./starter/backend
+        run: |
+          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag ${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }} .
+          docker push ${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.K8S_CLUSTER }}
+        shell: bash
+
+      - name: Deploy to Amazon EKS
+        run: |
+          cd ./starter/backend/k8s
+          kustomize edit set image backend=${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }}
+          kustomize build | kubectl apply -f 

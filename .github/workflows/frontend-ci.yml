@@ -1,0 +1,77 @@
+name: Frontend Continuous Integration
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REACT_APP_MOVIE_API_URL: http://localhost:5000
+
+jobs:
+  Lint:
+    name: Linting Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        working-directory: ./starter/frontend
+        run: npm ci
+
+      - name: Run linting job
+        run: cd starter/frontend && npm run lint
+  Test:
+    name: Test Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./starter/frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: ./starter/frontend
+        run: npm ci
+
+      - name: Run test job
+        run: cd starter/frontend && npm run test
+
+  Build:
+    needs: [Test, Lint]
+    name: Build Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./starter/frontend/package-lock.json"
+
+      - name: Build docker image
+        run: |
+          cd starter/frontend
+          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag=mp-frontend:latest .
+
+      - name: Run docker image
+        run: |
+          cd starter/frontend
+          docker run -p 3000:3000 --name mp-frontend -d mp-frontend

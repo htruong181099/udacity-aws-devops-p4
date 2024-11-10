@@ -1,0 +1,67 @@
+name: Backend Continuous Integration
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  Lint:
+    name: Linting Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: ./starter/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pip install flake8
+
+      - name: Run linting job
+        run: cd starter/backend && pipenv run lint
+  
+  Test:
+    name: Test Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: ./starter/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pip install flake8
+
+      - name: Run test
+        run: cd starter/backend && pipenv install pytest && pipenv run test
+
+  Build:
+    needs: [Test, Lint]
+    name: Build Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          cd starter/backend
+          docker build --tag=mp-backend:latest .
