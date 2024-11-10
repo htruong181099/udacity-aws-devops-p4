@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  ECR_REGISTRY: 555101760227.dkr.ecr.us-east-1.amazonaws.com/frontend
+  ECR_REGISTRY: 555101760227.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: frontend
   K8S_CLUSTER: cluster
   REPO_NAME: frontend
