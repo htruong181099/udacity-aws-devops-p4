@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  ECR_REGISTRY: 555101760227.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REGISTRY: 387599990729.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: backend
   K8S_CLUSTER: cluster
   IMAGE_TAG: ${{ github.sha }}
@@ -83,8 +83,8 @@ jobs:
       - name: Build & Push docker image to ECR
         working-directory: ./starter/backend
         run: |
-          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }} .
-          docker push ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }}
+          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ env.IMAGE_TAG }} .
+          docker push ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ env.IMAGE_TAG }}
 
       - name: Configure kubectl
         run: |
@@ -94,5 +94,5 @@ jobs:
       - name: Deploy to Amazon EKS
         run: |
           cd ./starter/backend/k8s
-          kustomize edit set image backend=${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }}
+          kustomize edit set image backend=${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ env.IMAGE_TAG }}
           kustomize build | kubectl apply -f -
