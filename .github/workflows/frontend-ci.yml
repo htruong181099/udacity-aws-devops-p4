@@ -21,8 +21,23 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18"
+          cache: 'npm'
+          cache-dependency-path: "starter/frontend/package-lock.json"
+
+      - name: Cache npm node_modules
+        id: npm-cache 
+        uses: actions/cache@v3
+        with:
+          path: ./starter/frontend/
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('./starter/frontend/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node_modules-
+    
+      - name: Cache hit message
+        if: steps.npm-cache.outputs.cache-hit == 'true'
+        run: echo "Cache hit! Dependencies were restored from the cache."
 
       - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         working-directory: ./starter/frontend
         run: npm ci
 
@@ -43,7 +58,20 @@ jobs:
           cache: "npm"
           cache-dependency-path: "./starter/frontend/package-lock.json"
 
+      - name: Cache npm node_modules
+        id: npm-cache 
+        uses: actions/cache@v3
+        with:
+          path: ./starter/frontend/
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('./starter/frontend/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node_modules-
+      
+      - name: Cache hit message
+        if: steps.npm-cache.outputs.cache-hit == 'true'
+        run: echo "Cache hit! Dependencies were restored from the cache."
+
       - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         working-directory: ./starter/frontend
         run: npm ci
 

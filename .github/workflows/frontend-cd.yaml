@@ -11,7 +11,7 @@ env:
   K8S_CLUSTER: cluster
   IMAGE_TAG: ${{ github.sha }}
   AWS_REGION: us-east-1
-  REACT_APP_MOVIE_API_URL: http://localhost:5000
+  REACT_APP_MOVIE_API_URL: ${{ secrets.REACT_APP_MOVIE_API_URL }}
 
 jobs:
   Lint:
