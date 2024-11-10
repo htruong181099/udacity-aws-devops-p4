@@ -9,7 +9,6 @@ env:
   ECR_REGISTRY: 555101760227.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: frontend
   K8S_CLUSTER: cluster
-  REPO_NAME: frontend
   IMAGE_TAG: ${{ github.sha }}
   AWS_REGION: us-east-1
   REACT_APP_MOVIE_API_URL: http://localhost:5000
@@ -86,8 +85,8 @@ jobs:
       - name: Build & Push docker image to ECR
         working-directory: ./starter/frontend
         run: |
-          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag ${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }} .
-          docker push ${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }}
+          docker build --build-arg=REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }} .
+          docker push ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }}
 
       - name: Configure kubectl
         run: |
@@ -96,5 +95,5 @@ jobs:
       - name: Deploy to Amazon EKS
         working-directory: starter/frontend/k8s
         run: |
-          kustomize edit set image frontend=${{env.ECR_REGISTRY}}/${{env.REPO_NAME}}:${{ github.sha }}
+          kustomize edit set image frontend=${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:${{ github.sha }}
           kustomize build | kubectl apply -f -
